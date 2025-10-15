@@ -1,0 +1,1925 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title> R-B MODs </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --surface-color: #ffffff;
+            --primary-accent-color: #00bfa5;
+            --primary-accent-dark-color: #00a790;
+            --new-tag-color: #ff3d71;
+            --text-color-primary: #1a202c;
+            --text-color-secondary: #5f6368;
+            --text-color-on-accent: #ffffff;
+            --border-color: #e2e8f0;
+            --shadow-color-light: rgba(0, 0, 0, 0.05);
+            --shadow-color-medium: rgba(0, 0, 0, 0.1);
+            --star-color: #fbbc04;
+            /* Placeholder SVG for general items - looks like a generic app icon */
+            --placeholder-img-svg: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjZWFkY2UwIiBzdHJva2U9IiNhMGE0YTgiIHN0cm9rZS13aWR0aD0iMSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWNhcD0icm91bmQiPjxyZWN0IHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgeD0iMyIgeT0iMyIgcnh9PSIyIiByeT0iMiIvPjxjaXJjbGUgY3g9IjguNSIgY3k9IjguNSIgcj0iMS41Ii8+PHBvbHlsaW5lIHBvaW50cz0iMjEgMTUgMTYgMTAgNSAyMCIvPjwvc3ZnPg==');
+            --font-body: 'Poppins', sans-serif;
+        }
+
+        /* --- General Styles --- */
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            width: 100%;
+            overflow-x: hidden;
+        }
+
+        body {
+            background: var(--bg-color);
+            color: var(--text-color-secondary);
+            font-family: var(--font-body);
+            line-height: 1.6;
+            width: 100%;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        body.menu-active,
+        body.search-active,
+        body.lightbox-active {
+            /* Removed .popup-active */
+            overflow: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        /* --- Header --- */
+
+        .header {
+            background: var(--surface-color);
+            padding: 12px 15px;
+            box-shadow: 0 1px 3px var(--shadow-color-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .menu-btn,
+        .search-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-color-primary);
+            font-size: 26px;
+            padding: 5px;
+        }
+
+        .app-logo img {
+            height: 40px;
+            width: auto;
+            display: block;
+            border-radius: 8px;
+        }
+
+        .app-logo {
+            cursor: pointer;
+        }
+
+        .app-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--text-color-primary);
+        }
+
+        /* --- Search Overlay --- */
+
+        .search-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--surface-color);
+            z-index: 2100;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease-in-out;
+            visibility: hidden;
+        }
+
+        .search-overlay.active {
+            transform: translateY(0);
+            visibility: visible;
+        }
+
+        .search-overlay-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        #mainSearchInput {
+            flex-grow: 1;
+            padding: 12px 15px;
+            border-radius: 25px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-color);
+            font-size: 16px;
+            outline: none;
+            margin-right: 15px;
+        }
+
+        .close-search-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-color-primary);
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        #searchResultsContainer {
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        /* --- Side Menu --- */
+
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .menu-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .side-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 90%;
+            max-width: 320px;
+            background: var(--surface-color);
+            z-index: 2000;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .side-menu.active {
+            transform: translateX(0);
+        }
+
+        .side-menu-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+
+        .side-menu-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .side-menu-brand img {
+            height: 48px;
+            width: 48px;
+            border-radius: 10px;
+        }
+
+        .side-menu-brand .app-title {
+            font-size: 24px;
+        }
+
+        .close-menu-btn {
+            background: var(--bg-color);
+            border: none;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-color-primary);
+        }
+
+        .close-menu-btn .material-icons {
+            font-size: 24px;
+        }
+
+        .side-menu-nav {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .side-menu-nav-item {
+            background: var(--bg-color);
+            padding: 20px 15px;
+            border-radius: 16px;
+            text-align: center;
+            text-decoration: none;
+            color: var(--text-color-primary);
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .side-menu-nav-item:hover {
+            background-color: #e9eef3;
+        }
+
+        .side-menu-nav-item .material-icons {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .side-menu-footer {
+            margin-top: auto;
+            text-align: center;
+        }
+
+        .side-menu-footer a {
+            display: block;
+            margin-bottom: 15px;
+            color: var(--text-color-secondary);
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .side-menu-footer a:hover {
+            color: var(--primary-accent-color);
+        }
+
+        /* --- Section Header --- */
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 28px 0 16px 0;
+        }
+
+        .section-icon {
+            color: var(--primary-accent-color);
+            font-size: 28px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-color-primary);
+        }
+
+        /* --- Carousel --- */
+
+        .popular-carousel {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding: 60px 15px 20px 15px;
+            scroll-snap-type: x mandatory;
+            scroll-padding-left: 15px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            margin: 0 -15px;
+        }
+
+        .popular-carousel::-webkit-scrollbar {
+            display: none;
+        }
+
+        .popular-card-item {
+            flex: 0 0 280px;
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            scroll-snap-align: start;
+            margin-bottom: 20px;
+        }
+
+        .popular-card-item:hover .popular-card-base {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+
+        .popular-card-base {
+            width: 100%;
+            height: 200px;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            background: var(--surface-color);
+            box-shadow: 0 10px 25px var(--shadow-color-medium);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .popular-card-abstract-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: inherit;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .popular-card-abstract-bg svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .android-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: white;
+            padding: 4px 8px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-color-primary);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 15;
+            gap: 4px;
+        }
+
+        .android-badge .material-icons {
+            font-size: 16px;
+            color: #a4c639;
+            line-height: 1;
+        }
+
+        .popular-app-logo-wrapper {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            z-index: 10;
+            background-color: white;
+            border: 3px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .popular-app-logo {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: inherit;
+        }
+
+        .popular-app-logo.placeholder {
+            object-fit: scale-down;
+            padding: 15%;
+            background-color: transparent;
+            content: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmYWxsPSJub25lIiBzdHJva2U9IiM1ZjYzNjgiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB3aWR0aD0iMjAiIGhlaWdoPSIyMCIgeD0iMiIgeT0iMiIgcj0iMiIvPjxwYXRoIGQ9Im05IDExIDMuMTMtMy4xM2ExLjUgMS41IDAgMCAxIDIuMTIgMCIgLz48cGF0aCBkPSJNNSAxNmw0LTEuNSA0IDQtMi40NDggMi41NjZhMiAyIDAgMCAxLS42ODItLjcwNSIgLz48L3N2Zz4=');
+        }
+
+        .popular-card-app-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-color-primary);
+            margin-top: 15px;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            padding: 0 5px;
+        }
+
+        .popular-card-info {
+            display: none;
+        }
+
+        /* --- Item Grids --- */
+
+        .item-grid {
+            display: grid;
+            gap: 16px;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        }
+
+        .item-card {
+            background: var(--surface-color);
+            border-radius: 16px;
+            box-shadow: 0 2px 8px var(--shadow-color-light);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-align: center;
+            padding: 15px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .item-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 15px var(--shadow-color-medium);
+        }
+
+        .item-card-icon-container {
+            width: 70px;
+            height: 70px;
+            margin: 0 auto 12px auto;
+            border-radius: 18px;
+            overflow: hidden;
+        }
+
+        .item-card-icon {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .item-card-icon.placeholder {
+            object-fit: scale-down;
+            padding: 20%;
+            background-color: var(--bg-color);
+            background-image: var(--placeholder-img-svg);
+            background-size: 60%;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .new-tag {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: var(--new-tag-color);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .new-tag::before {
+            content: '';
+            display: block;
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        .item-card-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-color-primary);
+            margin-bottom: 2px;
+            line-height: 1.3;
+            word-break: break-word;
+        }
+
+        .item-card-category {
+            font-size: 12px;
+            color: var(--text-color-secondary);
+            margin-bottom: 8px;
+        }
+
+        .item-card-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-color-secondary);
+            opacity: 0.8;
+            border-top: 1px solid var(--border-color);
+            padding-top: 8px;
+            margin-top: 8px;
+        }
+
+        /* --- Pagination --- */
+
+        .pagination {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 25px 15px;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .pagination::-webkit-scrollbar {
+            display: none;
+        }
+
+        .page-link {
+            cursor: pointer;
+            color: var(--text-color-secondary);
+            border: 1px solid var(--border-color);
+            background-color: var(--surface-color);
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .page-link:hover,
+        .page-link.active {
+            background-color: var(--primary-accent-color);
+            color: var(--text-color-on-accent);
+            border-color: var(--primary-accent-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px -2px rgba(0, 191, 165, 0.4);
+        }
+
+        .page-link.arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* --- Footer Banner --- */
+        .footer-banner {
+            margin-top: 20px;
+            padding: 25px;
+            background: var(--surface-color);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            text-align: center;
+            box-shadow: 0 -2px 10px var(--shadow-color-light);
+        }
+
+        .footer-banner img {
+            height: 50px;
+            width: auto;
+            border-radius: 10px;
+        }
+
+        .footer-banner p {
+            font-size: 14px;
+            color: var(--text-color-secondary);
+        }
+
+        /* --- Detail Section --- */
+
+        #sectionDetail {
+            padding: 20px 0;
+            max-width: 700px;
+            margin: 0 auto;
+            animation: slideInUp 0.5s ease both;
+        }
+
+        .detail-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .btn-back {
+            background: none;
+            border: none;
+            color: var(--text-color-primary);
+            font-size: 28px;
+            cursor: pointer;
+            margin-right: 15px;
+            padding: 5px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-back:hover {
+            background-color: var(--border-color);
+        }
+
+        .detail-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--text-color-primary);
+        }
+
+        .detail-card {
+            background: var(--surface-color);
+            padding: 20px;
+            border-radius: 16px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 25px;
+            animation: zoomIn 0.5s ease-out 0.1s both;
+        }
+
+        #detailAppImage {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        #detailAppImage.placeholder {
+            background-color: var(--bg-color);
+            background-image: var(--placeholder-img-svg);
+            background-size: 60%;
+            background-position: center;
+            background-repeat: no-repeat;
+            padding: 15%;
+        }
+
+        .detail-info {
+            flex-grow: 1;
+        }
+
+        #detailAppName {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-color-primary);
+            line-height: 1.3;
+        }
+
+        #detailAppCategory {
+            font-size: 14px;
+            color: var(--text-color-secondary);
+            margin: 2px 0 6px 0;
+        }
+
+        #detailStarRating {
+            font-size: 14px;
+            color: var(--text-color-secondary);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        #detailStarRating .stars {
+            color: var(--star-color);
+            font-size: 18px;
+        }
+
+        .detail-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 25px;
+            justify-content: center;
+        }
+
+        .detail-actions .btn {
+            flex: 1 1 auto;
+            min-width: 150px;
+            max-width: 100%;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            font-family: var(--font-body);
+            font-size: 15px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary-accent-color);
+            color: var(--text-color-on-accent);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-accent-dark-color);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--border-color);
+            color: var(--text-color-primary);
+        }
+
+        .btn-secondary:hover {
+            background: #d0d5db;
+            transform: translateY(-2px);
+        }
+
+        .detail-section-content {
+            margin-bottom: 25px;
+            animation: fadeIn 0.5s ease-out 0.3s both;
+        }
+
+        .detail-section-content .subtitle {
+            color: var(--text-color-primary);
+            margin-bottom: 15px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        #detailAppDescContainer ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        #detailAppDescContainer li {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            font-size: 15px;
+            color: var(--text-color-secondary);
+            line-height: 1.6;
+        }
+
+        #detailAppDescContainer li .material-icons {
+            margin-right: 12px;
+            font-size: 22px;
+            color: var(--primary-accent-color);
+        }
+
+        /* --- Screenshot Styles --- */
+
+        .screenshot-gallery {
+            overflow-x: auto;
+            display: flex;
+            gap: 12px;
+            padding: 10px 0 15px 0;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-color) var(--bg-color);
+        }
+
+        .screenshot-gallery::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .screenshot-gallery::-webkit-scrollbar-track {
+            background: var(--bg-color);
+            border-radius: 4px;
+        }
+
+        .screenshot-gallery::-webkit-scrollbar-thumb {
+            background-color: var(--border-color);
+            border-radius: 4px;
+        }
+
+        .screenshot-img {
+            height: 250px;
+            width: auto;
+            border-radius: 12px;
+            object-fit: cover;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s ease;
+        }
+
+        .screenshot-img:hover {
+            transform: scale(1.03);
+        }
+
+        /* Review Section */
+        .review-form {
+            background: var(--surface-color);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            animation: fadeInUpSmall 0.4s ease-out 0.4s both;
+        }
+
+        .review-form .subtitle {
+            font-size: 16px;
+            margin-bottom: 16px;
+            margin-top: 0;
+        }
+
+        .star-rating {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 16px;
+            direction: rtl;
+        }
+
+        .star-rating input {
+            display: none;
+        }
+
+        .star-rating label {
+            font-size: 32px;
+            color: #ccc;
+            cursor: pointer;
+            transition: color 0.2s ease, transform 0.1s ease;
+            padding: 0 2px;
+        }
+
+        .star-rating input:checked~label,
+        .star-rating label:hover,
+        .star-rating label:hover~label {
+            color: var(--star-color);
+            transform: scale(1.2);
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-color);
+            color: var(--text-color-primary);
+            margin-bottom: 12px;
+            font-size: 15px;
+            font-family: var(--font-body);
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: var(--primary-accent-color);
+            box-shadow: 0 0 0 3px rgba(0, 191, 165, 0.2);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 90px;
+        }
+
+        .review-item {
+            border-top: 1px solid var(--border-color);
+            padding: 16px 0;
+            animation: fadeIn 0.5s ease-out both;
+        }
+
+        .review-item:first-child {
+            border-top: none;
+            padding-top: 0;
+        }
+
+        .review-item p {
+            margin: 4px 0;
+            font-size: 14px;
+            color: var(--text-color-secondary);
+            word-break: break-word;
+        }
+
+        .review-item strong {
+            color: var(--text-color-primary);
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .review-item .review-stars {
+            color: var(--star-color);
+            font-size: 16px;
+            margin-bottom: 6px;
+        }
+
+        /* --- Fullscreen Lightbox Styles --- */
+        .lightbox-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 4000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .lightbox-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .lightbox-content {
+            position: relative;
+            max-width: 95vw;
+            max-height: 90vh;
+        }
+
+        .lightbox-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            transition: background-color 0.2s;
+        }
+
+        .lightbox-nav:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .lightbox-prev {
+            left: -60px;
+        }
+
+        .lightbox-next {
+            right: -60px;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: -45px;
+            right: -10px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            line-height: 1;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .lightbox-close:hover {
+            opacity: 1;
+        }
+
+        @media (max-width: 600px) {
+            .lightbox-prev {
+                left: 5px;
+            }
+
+            .lightbox-next {
+                right: 5px;
+            }
+
+            .lightbox-close {
+                top: 10px;
+                right: 10px;
+                font-size: 32px;
+                background: rgba(0, 0, 0, 0.3);
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+            }
+        }
+
+        /* Utility Classes */
+        .loading-message {
+            text-align: center;
+            color: var(--text-color-secondary);
+            font-style: italic;
+            margin: 40px auto;
+            width: 100%;
+            font-size: 16px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* Keyframes */
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 0.7;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeInUpSmall {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes zoomIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app-title {
+                display: none;
+            }
+
+            .popular-card-item {
+                flex: 0 0 260px;
+            }
+
+            .item-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            }
+
+            .detail-card {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .item-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .popular-card-item {
+                flex: 0 0 240px;
+            }
+
+            .popular-card-base {
+                height: 180px;
+            }
+
+            .popular-app-logo-wrapper {
+                width: 80px;
+                height: 80px;
+                border-radius: 20px;
+                border-width: 2px;
+            }
+
+            .popular-card-app-name {
+                font-size: 14px;
+            }
+
+            .detail-actions .btn {
+                flex: 1 1 100%;
+                min-width: unset;
+            }
+        }
+    
+/* Loading Screen */
+#loadingOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #1a0033; /* Dark purple */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+#loadingOverlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+.loader-logo {
+    width: 120px;
+    height: 120px;
+    border-radius: 20px;
+    animation: pulse 1.5s ease-in-out infinite, rotate 4s linear infinite;
+}
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+@keyframes rotate {
+    0% { transform: rotate(0deg) scale(1); }
+    100% { transform: rotate(360deg) scale(1); }
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="loadingOverlay">
+    <img src="https://i.postimg.cc/d11zcQqF/20250805-145459.png" alt="RBmods Logo" class="loader-logo">
+</div>
+
+
+    <div id="searchOverlay" class="search-overlay">
+        <div class="search-overlay-header">
+            <input type="text" id="mainSearchInput" placeholder="I want to find...">
+            <button class="close-search-btn">Cancel</button>
+        </div>
+        <div id="searchResultsContainer" class="item-grid">
+            <p class="loading-message" style="grid-column: 1 / -1;">Start typing to see results.</p>
+        </div>
+    </div>
+
+    <div class="menu-overlay"></div>
+    <div class="side-menu">
+        <div class="side-menu-header">
+            <div class="side-menu-brand">
+                <img src="https://i.postimg.cc/cLBGsBS4/20250805-181419.jpg" alt="Logo" style="width: 50px; height: auto; border-radius: 10px;" />
+                <h1 class="app-title">𓃠Ｒ𝔸𝐉𓃠</h1>
+            </div>
+            <button class="close-menu-btn">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <nav id="sideMenuNav" class="side-menu-nav">
+            </nav>
+        <div class="side-menu-footer">
+            <a href="#">Feedback</a>
+            <a href="#">Terms of use</a>
+            <a href="#">DMCA</a>
+            <a href="#">Copyright Holders</a>
+        </div>
+    </div>
+
+
+    <div id="mainContent">
+        <div class="header">
+            <div class="header-left">
+                <button class="menu-btn"><span class="material-icons">menu</span></button>
+                <div id="appLogo" class="app-logo">
+                    <img src="https://i.postimg.cc/cLBGsBS4/20250805-181419.jpg" alt=" R-B MODs  Logo">
+                </div>
+                <h1 class="app-title">GMA</h1>
+            </div>
+            <button class="search-btn"><span class="material-icons">search</span></button>
+        </div>
+
+        <div class="container">
+            <div id="popularSection" class="section active">
+                <div id="popular-section-header" class="section-header">
+                    <span class="material-icons section-icon" style="color: #ff3d71;">whatshot</span>
+                    <h2 class="section-title">Hot Items</h2>
+                </div>
+                <div id="popularList" class="popular-carousel">
+                    <p class="loading-message" style="width: 100%;">Loading popular items...</p>
+                </div>
+            </div>
+
+            <div id="itemsSection" class="section active">
+                <div id="items-section-header" class="section-header">
+                    <span class="material-icons section-icon" style="color: #536dfe;">grid_view</span>
+                    <h2 class="section-title">Latest Posts</h2>
+                </div>
+                <div id="itemsList" class="item-grid">
+                    <p class="loading-message" style="grid-column: 1 / -1;">Loading latest items...</p>
+                </div>
+                <div id="itemsPagination" class="pagination"></div>
+            </div>
+
+            <div id="footerSection" class="section active">
+                <div class="footer-banner">
+                    <img src="https://i.postimg.cc/cLBGsBS4/20250805-181419.jpg" alt=" R-B MODs  Logo">
+                    <p>Copyright © 2026 | dev by RB⚡mods</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sectionDetail" class="section">
+        <div class="container">
+            <div class="detail-header">
+                <button class="btn-back" onclick="hideDetailSection()">
+                    <span class="material-icons">arrow_back</span>
+                </button>
+                <h2 class="detail-title">Details</h2>
+            </div>
+            <div class="detail-card">
+                <img id="detailAppImage" src="" alt="Item Icon" class="placeholder">
+                <div class="detail-info">
+                    <h3 id="detailAppName">Item Name</h3>
+                    <p id="detailAppCategory">Category: <span>App</span></p>
+                    <div id="detailStarRating">
+                        <span class="stars">☆☆☆☆☆</span>
+                        <span class="review-count">(0 reviews)</span>
+                    </div>
+                </div>
+            </div>
+            <div class="detail-actions">
+                <a href="#" target="_blank" id="detailAppDownloadLink" class="btn btn-primary">
+                    <span class="material-icons">download</span>
+                    <span>Download</span>
+                </a>
+                <button class="btn btn-secondary" onclick="scrollToReviews()">
+                    <span class="material-icons">refresh</span>
+                    <span>Request Update</span>
+                </button>
+            </div>
+
+            <div id="screenshotSection" class="detail-section-content hidden">
+                <h4 class="subtitle">Screenshots</h4>
+                <div id="screenshotGallery" class="screenshot-gallery"></div>
+            </div>
+
+            <div class="detail-section-content">
+                <h4 class="subtitle">About this item</h4>
+                <div id="detailAppDescContainer">
+                    <ul></ul>
+                </div>
+            </div>
+            <div class="detail-section-content review-section">
+                <h4 class="subtitle">Ratings & Reviews</h4>
+                <div class="review-form">
+                    <h4 class="subtitle" style="font-size: 16px;">Rate this item</h4>
+                    <input type="text" id="reviewUserName" placeholder="Your Name" required>
+                    <div class="star-rating">
+                        <input type="radio" name="rating" id="star5" value="5" required><label for="star5" title="5 stars">★</label>
+                        <input type="radio" name="rating" id="star4" value="4"><label for="star4" title="4 stars">★</label>
+                        <input type="radio" name="rating" id="star3" value="3"><label for="star3" title="3 stars">★</label>
+                        <input type="radio" name="rating" id="star2" value="2"><label for="star2" title="2 stars">★</label>
+                        <input type="radio" name="rating" id="star1" value="1"><label for="star1" title="1 star">★</label>
+                    </div>
+                    <textarea id="reviewComment" placeholder="Write a review..." required></textarea>
+                    <button class="btn btn-primary" onclick="submitReview(event)">Post Review</button>
+                </div>
+                <h4 class="subtitle" style="margin-top: 24px;">User Reviews</h4>
+                <div id="reviewList">
+                    <p class="loading-message" style="margin-top:10px; font-size:14px;">No reviews yet. Be the first!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="lightboxOverlay" class="lightbox-overlay">
+        <div class="lightbox-content">
+            <img id="lightboxImage" class="lightbox-image" src="" alt="Fullscreen Screenshot">
+            <button id="lightboxClose" class="lightbox-close">&times;</button>
+            <button id="lightboxPrev" class="lightbox-nav lightbox-prev material-icons">chevron_left</button>
+            <button id="lightboxNext" class="lightbox-nav lightbox-next material-icons">chevron_right</button>
+        </div>
+    </div>
+
+    <script>
+        /********** FIREBASE CONFIGURATION **********/
+        const firebaseConfig = {
+            apiKey: "AIzaSyDl_gx63256sscVpI04yq6prtVJ1410Oak",
+            authDomain: "rbmods-app.firebaseapp.com",
+            databaseURL: "https://rbmods-app-default-rtdb.firebaseio.com",
+            projectId: "rbmods-app",
+            storageBucket: "rbmods-app.appspot.com",
+            messagingSenderId: "980274777804",
+            appId: "1:980274777804:web:c58ef569de946d8e35fc69"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        /************************************/
+
+        // --- Config ---
+        const NEW_DURATION_MS = 2 * 24 * 60 * 60 * 1000;
+        const ITEMS_PER_PAGE = 12;
+
+        // --- State ---
+        let allItems = [];
+        let currentItem = null;
+        let currentFilter = 'home';
+        let currentScreenshotIndex = 0;
+        let pageStates = {
+            home_latest: 1,
+        };
+
+        // --- DOM Elements ---
+        const mainContent = document.getElementById('mainContent');
+        const detailSection = document.getElementById('sectionDetail');
+        const menuBtn = document.querySelector('.menu-btn');
+        const closeMenuBtn = document.querySelector('.close-menu-btn');
+        const sideMenu = document.querySelector('.side-menu');
+        const menuOverlay = document.querySelector('.menu-overlay');
+        const sideMenuNav = document.getElementById('sideMenuNav');
+        const searchBtn = document.querySelector('.search-btn');
+        const searchOverlay = document.getElementById('searchOverlay');
+        const mainSearchInput = document.getElementById('mainSearchInput');
+        const appLogo = document.getElementById('appLogo');
+        const lightboxOverlay = document.getElementById('lightboxOverlay');
+
+        // --- UI Functions ---
+        function toggleMenu() {
+            sideMenu.classList.toggle('active');
+            menuOverlay.classList.toggle('active');
+            document.body.classList.toggle('menu-active');
+        }
+
+        function toggleSearch() {
+            searchOverlay.classList.toggle('active');
+            document.body.classList.toggle('search-active');
+            if (searchOverlay.classList.contains('active')) {
+                mainSearchInput.focus();
+            } else {
+                mainSearchInput.value = '';
+            }
+        }
+
+        function getCategoryIcon(category) {
+            const catLower = category.toLowerCase();
+            if (catLower.includes('game')) return 'games';
+            if (catLower.includes('video')) return 'videocam';
+            if (catLower.includes('photo')) return 'photo_camera';
+            if (catLower.includes('movie & ott')) return 'movie';
+            if (catLower.includes('vpn')) return 'vpn_key';
+            if (catLower.includes('music')) return 'music_note';
+            if (catLower.includes('tool')) return 'build';
+            return 'apps'; // Default icon
+        }
+
+        function createSideNav() {
+            sideMenuNav.innerHTML = ''; // Clear existing
+
+            // 1. Get all unique categories from the items
+            const categories = [...new Set(allItems.map(item => item.category).filter(Boolean))].sort();
+
+            // 2. Add 'Home' button first
+            const homeItem = document.createElement('a');
+            homeItem.className = 'side-menu-nav-item';
+            homeItem.innerHTML = `<span class="material-icons" style="color: #fbbc04;">home</span><div>Home</div>`;
+            homeItem.onclick = () => {
+                goHome();
+                toggleMenu();
+            };
+            sideMenuNav.appendChild(homeItem);
+
+            // 3. Add a button for each category
+            categories.forEach(category => {
+                if (!pageStates[category]) {
+                    pageStates[category] = 1; // Initialize page state for new category
+                }
+                const navItem = document.createElement('a');
+                navItem.className = 'side-menu-nav-item';
+                navItem.innerHTML = `<span class="material-icons">${getCategoryIcon(category)}</span><div>${escapeHTML(category)}</div>`;
+                navItem.onclick = () => {
+                    navigateAndFilter(category);
+                    toggleMenu();
+                };
+                sideMenuNav.appendChild(navItem);
+            });
+        }
+
+        // --- Navigation and Rendering ---
+        function goHome() {
+            if (detailSection.classList.contains('active')) {
+                hideDetailSection();
+            }
+            pageStates.home_latest = 1;
+            currentFilter = 'home';
+            renderContent('home');
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        function navigateAndFilter(category) {
+            if (detailSection.classList.contains('active')) {
+                hideDetailSection();
+            }
+            pageStates[category] = 1;
+            currentFilter = category;
+            renderContent(currentFilter);
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        function changePage(page, pageType) {
+            pageStates[pageType] = page;
+            renderContent(currentFilter);
+            const headerOffset = 70;
+            const element = document.getElementById('itemsSection') || document.getElementById('popularSection');
+            if (element) {
+                const elementPosition = element.offsetTop;
+                const offsetPosition = elementPosition - headerOffset;
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: "smooth"
+                });
+            }
+        }
+
+        function renderContent(filterType = 'home') {
+            currentFilter = filterType;
+
+            document.getElementById('popularSection').style.display = 'none';
+            document.getElementById('itemsSection').style.display = 'none';
+            document.getElementById('footerSection').style.display = 'none';
+            detailSection.classList.remove('active');
+            detailSection.classList.add('hidden');
+            mainContent.classList.remove('hidden');
+
+            if (filterType === 'home') {
+                ['popularSection', 'itemsSection', 'footerSection'].forEach(id => document.getElementById(id).style.display = 'block');
+
+                document.getElementById('items-section-header').querySelector('.section-title').textContent = 'Latest Posts';
+
+                const popular = allItems.filter(i => i.isPremium);
+                renderPopularItems(popular, 'popularList');
+
+                const latestPage = pageStates.home_latest;
+                const latestPaginated = allItems.slice((latestPage - 1) * ITEMS_PER_PAGE, latestPage * ITEMS_PER_PAGE);
+                renderItemGrid(latestPaginated, 'itemsList');
+                renderPagination('itemsPagination', allItems.length, ITEMS_PER_PAGE, latestPage, 'home_latest');
+
+            } else {
+                ['itemsSection', 'footerSection'].forEach(id => document.getElementById(id).style.display = 'block');
+
+                document.getElementById('items-section-header').querySelector('.section-title').textContent = `All ${filterType}`;
+
+                const itemsToShow = allItems.filter(item => item.category === filterType);
+                const currentPage = pageStates[filterType];
+                const paginatedItems = itemsToShow.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+                renderItemGrid(paginatedItems, 'itemsList');
+                renderPagination('itemsPagination', itemsToShow.length, ITEMS_PER_PAGE, currentPage, filterType);
+            }
+        }
+
+        function renderPagination(containerId, totalItems, itemsPerPage, currentPage, pageType) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+            if (totalPages <= 1) {
+                container.classList.add('hidden');
+                return;
+            }
+            container.classList.remove('hidden');
+
+            if (currentPage > 1) {
+                const prevBtn = document.createElement('button');
+                prevBtn.innerHTML = `<span class="material-icons">chevron_left</span>`;
+                prevBtn.className = 'page-link arrow';
+                prevBtn.onclick = () => changePage(currentPage - 1, pageType);
+                container.appendChild(prevBtn);
+            }
+
+            for (let i = 1; i <= totalPages; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.textContent = i;
+                pageBtn.className = 'page-link';
+                if (i === currentPage) pageBtn.classList.add('active');
+                pageBtn.onclick = () => changePage(i, pageType);
+                container.appendChild(pageBtn);
+            }
+
+            if (currentPage < totalPages) {
+                const nextBtn = document.createElement('button');
+                nextBtn.innerHTML = `<span class="material-icons">chevron_right</span>`;
+                nextBtn.className = 'page-link arrow';
+                nextBtn.onclick = () => changePage(currentPage + 1, pageType);
+                container.appendChild(nextBtn);
+            }
+        }
+
+        function renderPopularItems(items, elementId) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = '';
+            if (!items || items.length === 0) {
+                container.innerHTML = `<p class='loading-message'>No popular items found.</p>`;
+                return;
+            }
+            items.forEach((item) => {
+                const cardWrapper = document.createElement("div");
+                cardWrapper.className = "popular-card-item";
+                cardWrapper.onclick = () => showItemDetail(item);
+                const androidVersionText = item.minAndroidVersion ? `${item.minAndroidVersion}+` : '';
+
+                cardWrapper.innerHTML = `
+                    <div class="popular-card-base">
+                        <div class="popular-card-abstract-bg">
+                            <svg viewBox="0 0 280 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="M0 80C50 20, 150 0, 200 50L200 0L0 0L0 80Z" fill="#78B9F5" opacity="0.6"/><path d="M120 0C170 20, 250 80, 280 120L280 0Z" fill="#FDD835" opacity="0.7"/><path d="M0 120C50 180, 150 200, 200 150L200 200L0 200L0 120Z" fill="#F48FB1" opacity="0.6"/><path d="M100 200C150 180, 250 120, 280 80L280 200Z" fill="#81C784" opacity="0.7"/></svg>
+                        </div>
+                        <div class="android-badge">
+                            <span class="material-icons">android</span> ${escapeHTML(androidVersionText)}
+                        </div>
+                        <div class="popular-app-logo-wrapper">
+                            <img src="${escapeHTML(item.imageUrl)}" class="popular-app-logo" alt="${escapeHTML(item.name)} Logo" onerror="this.onerror=null; this.classList.add('placeholder');">
+                        </div>
+                    </div>
+                    <h3 class="popular-card-app-name">${escapeHTML(item.name)}</h3>`;
+                container.appendChild(cardWrapper);
+            });
+        }
+
+        /**
+         * Renders the item grid. Added closeSearch parameter for the search overlay fix.
+         * @param {Array<Object>} items 
+         * @param {string} elementId 
+         * @param {boolean} [closeSearch=false]
+         */
+        function renderItemGrid(items, elementId, closeSearch = false) { 
+            const container = document.getElementById(elementId);
+            container.innerHTML = '';
+
+            if (!items || items.length === 0) {
+                container.innerHTML = `<p class='loading-message' style="grid-column: 1 / -1;">No items found in this category.</p>`;
+                return;
+            }
+            items.forEach(item => {
+                const card = document.createElement("div");
+                card.className = "item-card";
+                
+                // FIX START: Modified click handler
+                card.onclick = () => {
+                    if (closeSearch) {
+                        toggleSearch(); // Close search overlay before showing details
+                    }
+                    showItemDetail(item);
+                };
+                // FIX END
+                
+                const newTagHTML = isNew(item) ? '<div class="new-tag">NEW</div>' : '';
+                const imgClass = item.imageUrl ? 'item-card-icon' : 'item-card-icon placeholder';
+                const reviews = Array.isArray(item.reviews) ? item.reviews : [];
+                const avgRating = reviews.length > 0 ? (reviews.reduce((s, r) => s + Number(r.rating), 0) / reviews.length).toFixed(1) : 'N/A';
+
+                card.innerHTML = `
+                    ${newTagHTML}
+                    <div class="item-card-icon-container">
+                        <img src="${escapeHTML(item.imageUrl)}" class="${imgClass}" alt="${escapeHTML(item.name)} icon" onerror="this.onerror=null; this.classList.add('placeholder'); this.src='';">
+                    </div>
+                    <div class="item-card-title">${escapeHTML(item.name)}</div>
+                    <div class="item-card-category">${escapeHTML(item.category)}</div>
+                    <div class="item-card-info">
+                        <span>★ ${avgRating}</span>
+                        <span>v${item.version || '1.0'}</span>
+                    </div>`;
+                container.appendChild(card);
+            });
+        }
+
+        // --- Data Fetching and Updating ---
+        async function fetchAllItems() {
+            try {
+                const snapshot = await database.ref('items').get();
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    allItems = Object.values(data);
+                    allItems.sort((a, b) => (b.addedTimestamp || 0) - (a.addedTimestamp || 0)); // Sort by newest first
+                } else {
+                    allItems = [];
+                }
+                createSideNav(); // Create the menu based on fetched data
+                renderContent('home'); // Render the home page
+            document.getElementById('loadingOverlay').classList.add('hidden');
+            } catch (error) {
+                console.error("Error fetching items:", error);
+                mainContent.innerHTML = `<p class="loading-message" style="color: #d93025;">Failed to load app data.</p>`;
+            }
+        }
+
+        async function updateItemInDB(item) {
+            try {
+                await database.ref('items/' + item.id).set(item);
+                console.log("Item updated successfully in Firebase!");
+            } catch (e) {
+                console.error("Failed to update item in Firebase:", e);
+                alert("Sorry, couldn't save your changes. Please try again.");
+                await fetchAllItems();
+            }
+        }
+
+        // --- Detail View ---
+        function showItemDetail(item) {
+            currentItem = item;
+            mainContent.classList.add('hidden');
+            detailSection.classList.remove('hidden');
+            detailSection.classList.add('active');
+            window.scrollTo(0, 0);
+
+            const imgEl = document.getElementById("detailAppImage");
+            imgEl.src = item.imageUrl || '';
+            imgEl.onerror = () => {
+                imgEl.onerror = null;
+                imgEl.classList.add('placeholder');
+                imgEl.src = '';
+            };
+            item.imageUrl ? imgEl.classList.remove('placeholder') : imgEl.classList.add('placeholder');
+
+            document.getElementById("detailAppName").textContent = escapeHTML(item.name);
+            document.getElementById("detailAppCategory").querySelector('span').textContent = escapeHTML(item.category);
+
+            const starRatingEl = document.getElementById("detailStarRating");
+            const starsContainer = starRatingEl.querySelector(".stars");
+            const reviewCountContainer = starRatingEl.querySelector(".review-count");
+            const reviews = Array.isArray(item.reviews) ? item.reviews : [];
+            const reviewCount = reviews.length;
+            if (reviewCount > 0) {
+                const avgRating = reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / reviewCount;
+                starsContainer.innerHTML = '★'.repeat(Math.round(avgRating)) + '☆'.repeat(5 - Math.round(avgRating));
+                reviewCountContainer.textContent = `(${reviewCount} review${reviewCount !== 1 ? 's' : ''})`;
+            } else {
+                starsContainer.innerHTML = '☆☆☆☆☆';
+                reviewCountContainer.textContent = `(0 reviews)`;
+            }
+
+            document.getElementById("detailAppDownloadLink").href = item.url || "#";
+
+            const screenshotGallery = document.getElementById("screenshotGallery");
+            screenshotGallery.innerHTML = '';
+            const screenshotSection = document.getElementById("screenshotSection");
+            if (item.screenshots && item.screenshots.length > 0) {
+                screenshotSection.classList.remove('hidden');
+                item.screenshots.forEach((ssUrl, index) => {
+                    const img = document.createElement('img');
+                    img.src = escapeHTML(ssUrl);
+                    img.className = 'screenshot-img';
+                    img.alt = `${escapeHTML(item.name)} screenshot ${index + 1}`;
+                    img.onclick = () => showLightbox(index);
+                    screenshotGallery.appendChild(img);
+                });
+            } else {
+                screenshotSection.classList.add('hidden');
+            }
+
+            const descContainer = document.getElementById("detailAppDescContainer").querySelector('ul');
+            descContainer.innerHTML = '';
+            if (item.desc && item.desc.length > 0) {
+                item.desc.forEach(fText => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<span class="material-icons">check_circle</span><span>${escapeHTML(fText)}</span>`;
+                    descContainer.appendChild(li);
+                });
+            } else {
+                descContainer.innerHTML = '<li>No description available.</li>';
+            }
+
+            renderReviews(reviews);
+            document.getElementById("reviewUserName").value = '';
+            document.getElementById("reviewComment").value = '';
+            document.querySelectorAll('#sectionDetail .star-rating input').forEach(r => r.checked = false);
+        }
+
+        function hideDetailSection() {
+            currentItem = null;
+            mainContent.classList.remove('hidden');
+            detailSection.classList.add('hidden');
+            detailSection.classList.remove('active');
+            renderContent(currentFilter);
+        }
+
+        function renderReviews(reviewsArray) {
+            const reviewListDiv = document.getElementById("reviewList");
+            reviewListDiv.innerHTML = '';
+            if (reviewsArray && reviewsArray.length > 0) {
+                const sortedReviews = reviewsArray.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                sortedReviews.forEach(review => {
+                    const div = document.createElement("div");
+                    div.className = "review-item";
+                    const rating = Number(review.rating) || 0;
+                    const stars = '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating));
+                    div.innerHTML = `<p><strong>${escapeHTML(review.userName)}</strong></p><p class="review-stars">${stars}</p><p>${escapeHTML(review.comment || "")}</p>`;
+                    reviewListDiv.appendChild(div);
+                });
+            } else {
+                reviewListDiv.innerHTML = '<p class="loading-message" style="margin:10px 0; font-size:14px;">No reviews yet. Be the first!</p>';
+            }
+        }
+
+        async function submitReview(event) {
+            event.preventDefault();
+            if (!currentItem) return;
+            const userName = document.getElementById("reviewUserName").value.trim();
+            const ratingInput = document.querySelector('#sectionDetail .star-rating input:checked');
+            const rating = ratingInput ? parseInt(ratingInput.value) : null;
+            const comment = document.getElementById("reviewComment").value.trim();
+
+            if (!userName || rating === null || !comment) {
+                alert("Please provide your name, a rating, and a comment.");
+                return;
+            }
+
+            const newReview = {
+                userName,
+                rating,
+                comment,
+                timestamp: new Date().toISOString()
+            };
+
+            const updatedItem = JSON.parse(JSON.stringify(currentItem));
+            updatedItem.reviews = updatedItem.reviews || [];
+            updatedItem.reviews.push(newReview);
+
+            await updateItemInDB(updatedItem); // Save to Firebase first
+
+            // Then update UI
+            currentItem = updatedItem;
+            const itemIndex = allItems.findIndex(i => i.id === currentItem.id);
+            if (itemIndex > -1) allItems[itemIndex] = currentItem;
+            showItemDetail(currentItem);
+        }
+
+        function scrollToReviews() {
+            const reviewSection = document.querySelector('.review-section');
+            if (reviewSection) {
+                reviewSection.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                setTimeout(() => document.getElementById("reviewComment").focus(), 600);
+            }
+        }
+
+        // --- Lightbox Functions ---
+        function showLightbox(index) {
+            if (!currentItem || !currentItem.screenshots || currentItem.screenshots.length === 0) return;
+            currentScreenshotIndex = index;
+            document.body.classList.add('lightbox-active');
+            lightboxOverlay.classList.add('active');
+            updateLightboxImage();
+        }
+
+        function hideLightbox() {
+            document.body.classList.remove('lightbox-active');
+            lightboxOverlay.classList.remove('active');
+        }
+
+        function showNextScreenshot() {
+            if (!currentItem || !currentItem.screenshots) return;
+            currentScreenshotIndex = (currentScreenshotIndex + 1) % currentItem.screenshots.length;
+            updateLightboxImage();
+        }
+
+        function showPrevScreenshot() {
+            if (!currentItem || !currentItem.screenshots) return;
+            currentScreenshotIndex = (currentScreenshotIndex - 1 + currentItem.screenshots.length) % currentItem.screenshots.length;
+            updateLightboxImage();
+        }
+
+        function updateLightboxImage() {
+            if (!currentItem || !currentItem.screenshots) return;
+            document.getElementById('lightboxImage').src = escapeHTML(currentItem.screenshots[currentScreenshotIndex]);
+        }
+
+        // --- Utilities ---
+        function isNew(item) {
+            return item.addedTimestamp && (Date.now() - item.addedTimestamp) < NEW_DURATION_MS;
+        }
+
+        function escapeHTML(str) {
+            if (typeof str !== 'string') return '';
+            return str.replace(/[&<>"']/g, match => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            } [match]));
+        }
+
+        // --- Initialization ---
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchAllItems();
+
+            menuBtn.addEventListener('click', toggleMenu);
+            closeMenuBtn.addEventListener('click', toggleMenu);
+            menuOverlay.addEventListener('click', toggleMenu);
+            appLogo.addEventListener('click', goHome);
+
+            searchBtn.addEventListener('click', toggleSearch);
+            document.querySelector('.close-search-btn').addEventListener('click', toggleSearch);
+
+            // FIX START: Updated search input listener to use the new renderItemGrid parameter
+            mainSearchInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.trim().toLowerCase();
+                const searchResultsContainer = document.getElementById('searchResultsContainer');
+                if (searchTerm) {
+                    const items = allItems.filter(item => item.name.toLowerCase().includes(searchTerm));
+                    // Pass 'true' as the third argument to close the search on click
+                    renderItemGrid(items, 'searchResultsContainer', true); 
+                } else {
+                    searchResultsContainer.innerHTML = '<p class="loading-message" style="grid-column: 1 / -1;">Start typing to see results.</p>';
+                }
+            });
+            // FIX END
+
+            document.getElementById('lightboxClose').addEventListener('click', hideLightbox);
+            document.getElementById('lightboxNext').addEventListener('click', showNextScreenshot);
+            document.getElementById('lightboxPrev').addEventListener('click', showPrevScreenshot);
+            lightboxOverlay.addEventListener('click', (e) => {
+                if (e.target === lightboxOverlay) hideLightbox();
+            });
+            document.addEventListener('keydown', (e) => {
+                if (lightboxOverlay.classList.contains('active')) {
+                    if (e.key === 'Escape') hideLightbox();
+                    if (e.key === 'ArrowRight') showNextScreenshot();
+                    if (e.key === 'ArrowLeft') showPrevScreenshot();
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
